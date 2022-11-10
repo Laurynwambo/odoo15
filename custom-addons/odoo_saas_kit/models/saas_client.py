@@ -18,7 +18,7 @@ import logging
 import base64
 from . lib import saas
 from . lib import query
-from . lib import containers
+from . import containers
 from . lib import client
 
 _logger = logging.getLogger(__name__)
