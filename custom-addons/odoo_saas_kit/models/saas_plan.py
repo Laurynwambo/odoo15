@@ -6,22 +6,21 @@
 #   License URL : <https://store.webkul.com/license.html/>
 #
 #################################################################################
-# var lib = './lib'
 from urllib.parse import urlparse
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
-from . import containers
+from . lib import containers
 from odoo.modules.module import get_module_resource
 from odoo.models import NewId
-from . import query
-from . import saas
+from . lib import query
+from . lib import saas
 import logging
 import time
 import os
 import docker
 import base64
 import re
-from . import client
+from . lib import client
 
 
 _logger = logging.getLogger(__name__)

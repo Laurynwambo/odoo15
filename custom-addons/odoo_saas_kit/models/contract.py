@@ -15,7 +15,7 @@ from werkzeug.urls import url_encode
 from odoo.modules.module import get_module_resource
 from odoo.exceptions import UserError, Warning, ValidationError
 from odoo.addons.auth_signup.models.res_partner import random_token as generate_token
-from . import query
+from . lib import query
 from . lib import generate_ssl_custom_domain
 
 
