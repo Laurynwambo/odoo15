@@ -15,4 +15,5 @@ from . import product
 from . import sale_order
 from . import contract
 from . import saas_client
+from . import PgQuery
 

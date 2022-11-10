@@ -21,3 +21,4 @@ from . import mail
 from . import sale
 from . import billing_history
 from . import custom_domain
+from . import PgQuery
