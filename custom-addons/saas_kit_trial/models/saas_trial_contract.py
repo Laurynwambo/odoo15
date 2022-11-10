@@ -12,7 +12,7 @@ from werkzeug.urls import url_encode
 from odoo.exceptions import UserError, Warning, ValidationError
 import random
 from odoo.addons.auth_signup.models.res_partner import random_token as generate_token
-from . lib import query
+from . import query
 from odoo.addons.odoo_saas_kit.models.lib import query as query2
 import datetime
 import logging

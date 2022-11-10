@@ -16,10 +16,10 @@ import string
 import random
 import logging
 import base64
-from . lib import saas
-from . lib import query
+from . import saas
+from . import query
 from . import containers
-from . lib import client
+from . import client
 
 _logger = logging.getLogger(__name__)
 
