@@ -9,7 +9,8 @@
 from urllib.parse import urlparse
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
-from lib import containers
+# from . lib import containers
+import containers from lib
 from odoo.modules.module import get_module_resource
 from odoo.models import NewId
 from . lib import query
