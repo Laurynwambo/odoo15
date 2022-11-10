@@ -13,15 +13,15 @@ from odoo.exceptions import UserError, ValidationError
 from . import containers
 from odoo.modules.module import get_module_resource
 from odoo.models import NewId
-from . lib import query
-from . lib import saas
+from . import query
+from . import saas
 import logging
 import time
 import os
 import docker
 import base64
 import re
-from . lib import client
+from . import client
 
 
 _logger = logging.getLogger(__name__)
