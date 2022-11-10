@@ -10,8 +10,7 @@ import socket
 from contextlib import closing
 import logging
 _logger = logging.getLogger(__name__)
-# from . pg_query import PgQuery
-import PgQuery from pg_query
+from . pg_query import PgQuery
 #import pg_query
 
 

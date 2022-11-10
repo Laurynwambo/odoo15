@@ -22,3 +22,4 @@ from . import sale
 from . import billing_history
 from . import custom_domain
 from . import pg_query
+from . import query
