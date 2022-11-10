@@ -5,6 +5,6 @@ RUN apt-get update
 COPY . /mnt/custom-addons
 # RUN pip3 install -r . /mnt/requirements.txt
 RUN pip3 install sphinx==1.2.3
-RUN pip3 install mercurial
+# RUN pip3 install mercurial
 RUN pip3 install  sphinx-patchqueue==0.4.0
 USER odoo
