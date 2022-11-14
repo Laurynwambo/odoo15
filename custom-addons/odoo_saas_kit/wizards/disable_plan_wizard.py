@@ -20,5 +20,7 @@ class DropPlanDb(models.TransientModel):
     db_id = fields.Integer(string="DB Plan Id")
 
     def drop_db_plan(self):
-        record = self.env['saas.plan'].browse([self.env.context.get('db_id')])        
+        record = self.env['saas.plan'].browse([self.env.context.get('db_id')])
+        _logger.error(record)
+        _logger.error('DROPING THE DB FOR THE SPECIFC USERS!!!!')
         record.drop_template()

@@ -152,6 +152,8 @@ class SaasServer(models.Model):
         It call both the test_db_connection and _host connection, and change the state if both the connection successful.
         """
         for obj in self:
+            _logger.error(obj)
+            _logger.error('TESTING THE LOOPING INSTANCE!!!!')
             obj.test_db_connection(from_set=True)
             if obj.host_server == 'remote':
                 obj.test_host_connection(from_set=True)
