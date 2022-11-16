@@ -3,6 +3,9 @@ from datetime import datetime
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class laundry_order(models.Model):
     _inherit = "laundry.order"
@@ -34,6 +37,7 @@ class laundry_order(models.Model):
         return res
 
     def _action_create_invoice_line(self, line=False, move_id=False):
+        _logger.error('TESTING THE CREATIONS!!')
         res = super(laundry_order, self)._action_create_invoice_line(line, move_id)
         res.write({'invoice_line_note': line.line_note})
         return res
