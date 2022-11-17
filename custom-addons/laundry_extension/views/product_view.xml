@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+<record id="product_product_view_inherit" model="ir.ui.view">
+<field name="name">product.product.inherit</field>
+<field name="model">product.product</field>
+<field name="inherit_id" ref="product.product_normal_form_view"/>
+<field name="arch" type="xml">
+    <xpath expr="//field[@name='detailed_type']" position="after">
+      <field name="service_type"  attrs="{'invisible': [('detailed_type', '!=', 'service')]}"/>
+    </xpath>
+</field>
+</record>
+</odoo>

@@ -4,6 +4,7 @@ from odoo.tools import float_is_zero, float_round, float_repr, float_compare
 from odoo.http import request, Response
 from datetime import datetime
 import logging
+import json
 
 _logger = logging.getLogger(__name__)
 
@@ -12,104 +13,120 @@ class AccountMove(models.Model):
     _inherit = 'account.move'
     _description = 'Description'
 
-
-    def action_post(self):
-        context = self._context
-        current_uid = context.get('uid')
-        logged_in_user = self.env['res.users'].browse(current_uid)
-        #inherit of the function from account.move to validate a new tax and the priceunit of a downpayment
-        res = super(AccountMove, self).action_post()
-        line_ids = self.mapped('line_ids').filtered(lambda line: line.sale_line_ids.is_downpayment)
-        for line in line_ids:
-            try:
-                line.sale_line_ids.tax_id = line.tax_ids
-                if all(line.tax_ids.mapped('price_include')):
-                    line.sale_line_ids.price_unit = line.price_unit
-                else:
-                    #To keep positive amount on the sale order and to have the right price for the invoice
-                    #We need the - before our untaxed_amount_to_invoice
-                    line.sale_line_ids.price_unit = -line.sale_line_ids.untaxed_amount_to_invoice
-            except UserError:
-                # a UserError here means the SO was locked, which prevents changing the taxes
-                # just ignore the error - this is a nice to have feature and should not be blocking
-                pass
-        for rec in self:
-            values={
-                "partner_id":self.partner_id.id,
-                "order_date":self.invoice_date,
-                "partner_invoice_id":self.partner_id.id,
-                "partner_shipping_id":self.partner_id.id,
-                "laundry_person":logged_in_user.id
-            }
-            laundry_order = request.env['laundry.order'].sudo().create(values)
-        for line_id in self.invoice_line_ids:
-            laundry_lines={
-                'product_id':line_id.product_id.id,
-                'amount':line_id.price_unit,
-                'laundry_obj':laundry_order.id,
-                'description':line_id.name,
-                'qty':line_id.quantity
-                }
-            order_lines = request.env['laundry.order.line'].sudo().create(laundry_lines)
-        return {res,laundry_order}
-
-
-
 class PosOrder(models.Model):
     _inherit = 'pos.order'
     _description = 'Description'
 
-    def _generate_pos_order_invoice(self):
+    @api.model
+    def create_from_ui(self, orders, draft=False):
         context = self._context
         current_uid = context.get('uid')
         logged_in_user = self.env['res.users'].browse(current_uid)
-        moves = self.env['account.move']
+        data=orders[0]["data"]
+        payload=data['lines']
+        order_ids = super(PosOrder, self).create_from_ui(orders, draft)
+        the_id=[o['id'] for o in order_ids]
+        the_order = request.env['pos.order'].sudo().search([('id','=',the_id)])
+        # for check_status in the_order.lines:
+        #     if check_status.product_id.
+        if the_order:
+            laundry_values={
+            "partner_id":the_order.partner_id.id,
+            "order_date":the_order['date_order'],
+            "partner_invoice_id":the_order.partner_id.id,
+            "partner_shipping_id":the_order.partner_id.id,
+            "laundry_person":the_order['user_id'].id  
+            }
+        laundry_order = request.env['laundry.order'].sudo().create(laundry_values)
+        for rec in payload:
+            record=rec[2]['washing_stage'].lower()
+            work_id = request.env['washing.type'].sudo().search([(('name'.lower()),'=',record)])
+            if work_id:
+                laundry_lines={
+                'product_id':rec[2]['product_id'],
+                'amount':work_id.amount,
+                'washing_type':work_id.id,
+                'laundry_obj':laundry_order.id,
+                'description':rec[2]['description'],
+                'qty':rec[2]['qty']
+                }
+                order_lines = request.env['laundry.order.line'].sudo().create(laundry_lines)
+            else:
+                data={
+                     "name":rec[2]['washing_stage'].lower(),
+                    "amount":rec[2]['washing_amount'],
+                    "assigned_person":logged_in_user.id
+                }
+                work_id = request.env['washing.type'].sudo().create(data)
+                laundry_lines={
+                'product_id':rec[2]['product_id'],
+                'amount':work_id.amount,
+                'washing_type':work_id.id,
+                'laundry_obj':laundry_order.id,
+                'description':rec[2]['description'],
+                'qty':rec[2]['qty']
+                }
+                order_lines = request.env['laundry.order.line'].sudo().create(laundry_lines)
+        for order in self.sudo().browse([o['id'] for o in order_ids]):
+            for line in order.lines.filtered(lambda l: l.product_id == order.config_id.down_payment_product_id and l.qty > 0 and l.sale_order_origin_id):
+                sale_lines = line.sale_order_origin_id.order_line
+                sale_line = self.env['sale.order.line'].create({
+                    'order_id': line.sale_order_origin_id.id,
+                    'product_id': line.product_id.id,
+                    'price_unit': line.price_unit,
+                    'product_uom_qty': 0,
+                    'tax_id': [(6, 0, line.tax_ids.ids)],
+                    'is_downpayment': True,
+                    'discount': line.discount,
+                    'sequence': sale_lines and sale_lines[-1].sequence + 1 or 10,
+                })
+                sale_line._compute_tax_id()
+                line.sale_order_line_id = sale_line
 
-        for order in self:
-            # Force company for all SUPERUSER_ID action
-            if order.account_move:
-                moves += order.account_move
-                continue
+            so_lines = order.lines.mapped('sale_order_line_id')
 
-            if not order.partner_id:
-                raise UserError(_('Please provide a partner for the sale.'))
+            # confirm the unconfirmed sale orders that are linked to the sale order lines
+            sale_orders = so_lines.mapped('order_id')
+            _logger.error(order_ids)
+            for sale_order in sale_orders.filtered(lambda so: so.state in ['draft', 'sent']):
+                sale_order.action_confirm()
 
-            move_vals = order._prepare_invoice_vals()
-            new_move = order._create_invoice(move_vals)
-            laundry_vals = order._prepare_invoice_vals()
+            # update the demand qty in the stock moves related to the sale order line
+            # flush the qty_delivered to make sure the updated qty_delivered is used when
+            # updating the demand value
+            so_lines.flush(['qty_delivered'])
+            # track the waiting pickings
+            waiting_picking_ids = set()
+            for so_line in so_lines:
+                for stock_move in so_line.move_ids:
+                    picking = stock_move.picking_id
+                    if not picking.state in ['waiting', 'confirmed', 'assigned']:
+                        continue
+                    new_qty = so_line.product_uom_qty - so_line.qty_delivered
+                    if float_compare(new_qty, 0, precision_rounding=stock_move.product_uom.rounding) <= 0:
+                        new_qty = 0
+                    stock_move.product_uom_qty = so_line.product_uom._compute_quantity(new_qty, stock_move.product_uom, False)
+                    waiting_picking_ids.add(picking.id)
 
-            order.write({'account_move': new_move.id, 'state': 'invoiced'})
-            new_move.sudo().with_company(order.company_id)._post()
-            laundry_order = request.env['laundry.order'].sudo().create({
-               "partner_id":new_move.partner_id.id,
-                "order_date":new_move.invoice_date,
-                "partner_invoice_id":new_move.partner_id.id,
-                "partner_shipping_id":new_move.partner_id.id,
-                "laundry_person":logged_in_user.id  
-            })
-            for line_id in new_move.invoice_line_ids:
-                    laundry_lines={
-                        'product_id':line_id.product_id.id,
-                        'amount':line_id.price_unit,
-                        'laundry_obj':laundry_order.id,
-                        'description':line_id.name,
-                        'qty':line_id.quantity
-                        }
-                    order_lines = request.env['laundry.order.line'].sudo().create(laundry_lines)
-            moves += new_move
-            order._apply_invoice_payments()
+            def is_product_uom_qty_zero(move):
+                return float_is_zero(move.product_uom_qty, precision_rounding=move.product_uom.rounding)
 
-        if not moves:
-            return {}
+            # cancel the waiting pickings if each product_uom_qty of move is zero
+            for picking in self.env['stock.picking'].browse(waiting_picking_ids):
+                if all(is_product_uom_qty_zero(move) for move in picking.move_lines):
+                    picking.action_cancel()
 
-        return {
-            'name': _('Customer Invoice'),
-            'view_mode': 'form',
-            'view_id': self.env.ref('account.view_move_form').id,
-            'res_model': 'account.move',
-            'context': "{'move_type':'out_invoice'}",
-            'type': 'ir.actions.act_window',
-            'nodestroy': True,
-            'target': 'current',
-            'res_id': moves and moves.ids[0] or False,
-        }
+        return order_ids
+
+
+
+class ProductProduct(models.Model):
+    _inherit = "product.product"
+    _description = "product inherit lines"
+    # _rec_name = "product_id"
+
+
+    service_type = fields.Selection([
+        ('l_service', 'Laundry Service'),
+        ('other_service', 'Other Serviice')],
+        string='Type of Service')
