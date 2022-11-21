@@ -17,7 +17,7 @@ odoo.define('pos_laundry_service.WashingStagePopupWidget', function(require) {
         get currentOrder(){
             return this.env.pos.get_order();
         }
-
+        
         click_confirm(){
           var order    = this.env.pos.get_order();
   	    	var selected_line = order.get_selected_orderline();

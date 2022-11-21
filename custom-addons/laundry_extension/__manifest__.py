@@ -6,8 +6,8 @@
     'category': 'tools',
     'author': '@The-Kadweka',
     'website': 'Website',
-    'depends': ['laundry_management','product','point_of_sale'],
-    'data': ['views/product_view.xml'],
+    'depends': ['base','laundry_management', 'product', 'point_of_sale'],
+    'data': ['views/product_view.xml', 'data/data.xml'],
     'demo': [],
     'installable': True,
     'auto_install': False

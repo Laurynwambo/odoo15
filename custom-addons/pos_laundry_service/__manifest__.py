@@ -37,7 +37,7 @@
                                 7. Track the time taken for washing and ironing those laundry orders.
                                 8. Easy user management based on different roles and access restrictions to the laundry system.
                             """,
-    "depends": ['base', 'point_of_sale', 'sale', 'sale_management', 'account'],
+    "depends": ['base', 'point_of_sale','laundry_management', 'sale', 'sale_management', 'account'],
     "license": 'Other proprietary',
     "data": [
         'data/data.xml',

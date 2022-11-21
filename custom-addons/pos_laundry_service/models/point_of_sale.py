@@ -41,34 +41,6 @@ class laundry_order(models.Model):
         res = super(laundry_order, self)._action_create_invoice_line(line, move_id)
         res.write({'invoice_line_note': line.line_note})
         return res
-
-    def _prepare_laundry_order(self):
-        sale_obj = self.env['sale.order']
-        sale_line_obj = self.env['sale.order.line']
-        sale_id = sale_obj.create({
-            'partner_id': self.partner_id.id,
-            'partner_invoice_id': self.partner_invoice_id.id,
-            'partner_shipping_id': self.partner_shipping_id.id,
-            'sale_note': self.note})
-        self.sale_obj = sale_obj
-        product_id = self.env.ref('laundry_management.laundry_service')
-        self.env['laundry.order.line'].create({'product_id': product_id.id,
-                                               'name': 'Laundry Service',
-                                               'price_unit': self.total_amount,
-                                               'order_id': sale_obj.id
-                                               })
-
-        for each in self:
-            for obj in each.order_lines:
-                self.env['washing.washing'].create({
-                    'name': obj.product_id.name + '-Washing',
-                    'user_id': obj.washing_type.assigned_person.id,
-                    'description': obj.description,
-                    'laundry_obj': obj.id,
-                    'state': 'draft',
-                    'washing_date': datetime.now().strftime(
-                        '%Y-%m-%d %H:%M:%S')})
-
     def create_invoice(self):
         if self.sale_obj.state in ['draft', 'sent']:
             self.sale_obj.action_confirm()
