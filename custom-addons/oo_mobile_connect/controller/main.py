@@ -13,6 +13,8 @@ class MobileConnect(http.Controller):
     def get_invoices(self,email=None):
         invoices=[]
         invoice_paid_amount = 0.00
+        paid=0.00
+        not_paid=0.00
         data = json.loads(request.httprequest.data)
         if not data['email']:
             response={
@@ -28,6 +30,8 @@ class MobileConnect(http.Controller):
         for rec in invoice:
             for line in rec._get_reconciled_info_JSON_values():
                     invoice_paid_amount += line['amount']
+                    paid+=line['amount']
+            not_paid+=rec.amount_residual
             inv_info = {
                     "ref": rec.name,
                     "inv_date": rec.invoice_date,
@@ -40,6 +44,8 @@ class MobileConnect(http.Controller):
         return {
             "status": 200, 
             'response': invoices,
+            'paid': paid,
+            'not_paid': not_paid,
             "message": "Invoices for the Provided Email"
         }
     
