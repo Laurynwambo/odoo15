@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
 RUN apt-get update
 COPY . /mnt/custom-addons
 RUN pip3 install jwt
-RUN pip3 install json
+RUN pip3 install simplejson
 # RUN pip3 install docker
 # RUN pip3 install paramiko
 # RUN pip3 install mercurial
