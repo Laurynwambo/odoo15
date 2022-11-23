@@ -102,7 +102,7 @@ class JwtHttp:
                 # login success, generate token
                 # user = request.env["res.partner"].sudo().search([("email", "=", email)])
                 token = validator.create_token(partner, password)
-                data={ 'user_name': partner.phone,'user_name': partner.name, 'email': partner.email,'user_id': partner.id, 'token_type': 'Bearer', 'access_token': token, 'code':200 }
+                data={ 'phone': partner.phone,'user_name': partner.name, 'email': partner.email,'user_id': partner.id, 'token_type': 'Bearer', 'access_token': token, 'code':200 }
                 return data
             else:
                 response = {
