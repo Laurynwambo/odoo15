@@ -45,7 +45,7 @@ class MobileConnect(http.Controller):
             "status": 200, 
             'response': invoices,
             'paid': round(paid,3),
-            'items':True if len(invoice)>0 else False,
+            'items':len(invoice),
             'not_paid': round(not_paid,3),
             "message": "Invoices for the Provided Email"
         }
