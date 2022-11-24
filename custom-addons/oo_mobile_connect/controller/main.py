@@ -79,7 +79,7 @@ class MobileConnect(http.Controller):
         return {
             "status": 200, 
             'response': payments,
-            'response': len(payments),
+            'items': len(payments),
             'paid':paid,
             "message": "Payments for the Provided Email"
         }
