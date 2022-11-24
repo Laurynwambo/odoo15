@@ -41,12 +41,11 @@ class MobileConnect(http.Controller):
                     "paid_amount": invoice_paid_amount
                 }
             invoices.append(inv_info)
-        
         return {
             "status": 200, 
             'response': invoices,
             'paid': paid,
-            'items':len(invoice),
+            'items':True if len(invoice)>0 else False,
             'not_paid': not_paid,
             "message": "Invoices for the Provided Email"
         }
