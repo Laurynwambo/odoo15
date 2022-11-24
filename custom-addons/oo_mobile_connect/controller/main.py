@@ -36,9 +36,9 @@ class MobileConnect(http.Controller):
                     "ref": rec.name,
                     "inv_date": rec.invoice_date,
                     "due_date": rec.invoice_date_due,
-                    "due_amount": round(rec.amount_residual,3),
+                    "due_amount": round(rec.amount_residual,2),
                     "inv_status": rec.payment_state,
-                    "paid_amount": round(invoice_paid_amount,3)
+                    "paid_amount": round(invoice_paid_amount,2)
                 }
             invoices.append(inv_info)
         return {
@@ -47,7 +47,7 @@ class MobileConnect(http.Controller):
             'paid': round(paid,3),
             'items':len(invoice),
             'not_paid': round(not_paid,3),
-            'percentage':round(not_paid/(not_paid+paid)*100,3),
+            'percentage':round(not_paid/(not_paid+paid)*100,2),
             "message": "Invoices for the Provided Email"
         }
     
