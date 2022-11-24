@@ -36,17 +36,17 @@ class MobileConnect(http.Controller):
                     "ref": rec.name,
                     "inv_date": rec.invoice_date,
                     "due_date": rec.invoice_date_due,
-                    "due_amount": rec.amount_residual,
+                    "due_amount": round(rec.amount_residual,3),
                     "inv_status": rec.payment_state,
-                    "paid_amount": invoice_paid_amount
+                    "paid_amount": round(invoice_paid_amount,3)
                 }
             invoices.append(inv_info)
         return {
             "status": 200, 
             'response': invoices,
-            'paid': paid,
+            'paid': round(paid,3),
             'items':True if len(invoice)>0 else False,
-            'not_paid': not_paid,
+            'not_paid': round(not_paid,3),
             "message": "Invoices for the Provided Email"
         }
     
@@ -70,7 +70,7 @@ class MobileConnect(http.Controller):
                     "ref": rec.name,
                     "pay_date": rec.date,
                     "inv_paid": rec.ref,
-                    "amount": rec.amount
+                    "amount": round(rec.amount,3)
                 }
             payments.append(payment_info)
         return {
