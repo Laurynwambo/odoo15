@@ -47,6 +47,7 @@ class MobileConnect(http.Controller):
             'paid': round(paid,3),
             'items':len(invoice),
             'not_paid': round(not_paid,3),
+            'percentage':not_paid/(not_paid+paid)*100,
             "message": "Invoices for the Provided Email"
         }
     
@@ -80,6 +81,7 @@ class MobileConnect(http.Controller):
             "status": 200, 
             'response': payments,
             'items': len(payments),
+            # 'percentage':paid/(not_paid+paid)*100,
             'paid':paid,
             "message": "Payments for the Provided Email"
         }
