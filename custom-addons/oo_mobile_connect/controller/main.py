@@ -54,6 +54,7 @@ class MobileConnect(http.Controller):
     @http.route('/api/payments',type='json',auth='public',cors='*',  method=['POST'])
     def get_payments(self,email=None):
         payments=[]
+        paid=0.00
         data = json.loads(request.httprequest.data)
         if not data['email']:
             response={
@@ -66,6 +67,7 @@ class MobileConnect(http.Controller):
             ('payment_type','=','inbound')
             ])
         for rec in payment:
+            paid+=round(rec.amount,3)
             payment_info = {
                     "ref": rec.name,
                     "pay_date": rec.date,
@@ -73,8 +75,11 @@ class MobileConnect(http.Controller):
                     "amount": round(rec.amount,3)
                 }
             payments.append(payment_info)
+        
         return {
             "status": 200, 
             'response': payments,
+            'response': len(payments),
+            'paid':paid,
             "message": "Payments for the Provided Email"
         }
