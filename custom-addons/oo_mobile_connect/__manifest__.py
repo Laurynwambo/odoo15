@@ -7,7 +7,7 @@
     'website': '',
     'license': 'LGPL-3',
     'category': 'tool',
-    'depends': ['base','base_accounting_kit','website'],
+    'depends': ['base','base_accounting_kit'],
     'data': [
     'security/ir.model.access.csv',
     'Views/view.xml'
