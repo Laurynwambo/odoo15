@@ -7,8 +7,11 @@
     'website': '',
     'license': 'LGPL-3',
     'category': 'tool',
-    'depends': ['base_accounting_kit'],
-    'data': [],
+    'depends': ['base','base_accounting_kit','website'],
+    'data': [
+    'security/ir.model.access.csv',
+    'Views/view.xml'
+    ],
     'demo': [],
     'auto_install': False,
     'application': False,

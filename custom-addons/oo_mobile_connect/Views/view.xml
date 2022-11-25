@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <record id="db_connection_form_view" model="ir.ui.view">
+        <field name="name">db.connection.form</field>
+        <field name="model">db.connection</field>
+        <field name="arch" type="xml">
+            <form string="Db Connection">
+            <header>
+            <button name="check_db_connection" string="Check Connection" type="object" states="draft"/>
+            <button name="cancel_db_connection" string="Cancel Connection" type="object" states="confirm"/>
+            </header>
+                <group col="2" colspan="2">
+                    <group>
+                    <field name="user_id"/>
+                    <field name="password" password='True'/>
+                    </group>
+                    <group>
+                    <field name="state"/>
+                    </group>
+                </group>
+            </form>
+        </field>
+    </record>
+    <record model="ir.ui.view" id="db_connection_tree_view">
+    <field name="name">db.connection.form</field>
+    <field name="model">db.connection</field>
+    <field name="arch" type="xml">
+        <tree string="Db Connectivity">
+            <field name="user_id"/>
+            <field name="password" password='True'/>
+            <field name="state"/>
+        </tree>
+    </field>
+    </record>   
+ 
+     <record id="action_db_connection" model="ir.actions.act_window">
+        <field name="name">Db Connection Management</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">db.connection</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">{'state':'confirm'}</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Click to create a New Order.
+            </p>
+        </field>
+    </record>
+        <menuitem name="Db Connection" action="action_db_connection" id="db_connection_center" parent="base.menu_security"/>
+</odoo>

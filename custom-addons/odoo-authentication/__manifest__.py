@@ -13,7 +13,7 @@
     'license':'LGPL-3',
     'data': [],
     'depends': ['base','mail'],
-    'data': [],
+    # 'data': ['Views/template.xml'],
     'images': ['static/description/banner.jpg'],
     'application': True,
 }

@@ -1,10 +1,18 @@
 from odoo import models, fields, api
 from odoo.http import request, Response
+from openerp import http
+import logging
+import json
+
+
+_logger = logging.getLogger(__name__)
+
 
 class GetEmailTemplates(models.Model):
     _inherit = 'res.partner'
 
     def get_email_template(self,password_reset_link):
+        url = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
         template = f""""
             <!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
         <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -262,8 +270,8 @@ class GetEmailTemplates(models.Model):
                 <td style="overflow-wrap:break-word;word-break:break-word;padding:10px;font-family:'Lato',sans-serif;" align="left">
                     
             <div align="center">
-            <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; border-collapse: collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;font-family:'Lato',sans-serif;"><tr><td style="font-family:'Lato',sans-serif;" align="center"><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://mea007-medex-test-3712860.dev.odoo.com/contact/" style="height:36px; v-text-anchor:middle; width:108px;" arcsize="11%" stroke="f" fillcolor="#3AAEE0"><w:anchorlock/><center style="color:#FFFFFF;font-family:'Lato',sans-serif;"><![endif]-->
-                <a href="https://mea007-medex-test-3712860.dev.odoo.com/contact/" target="_blank" style="box-sizing: border-box;display: inline-block;font-family:'Lato',sans-serif;text-decoration: none;-webkit-text-size-adjust: none;text-align: center;color: #FFFFFF; background-color: #3AAEE0; border-radius: 4px;-webkit-border-radius: 4px; -moz-border-radius: 4px; width:auto; max-width:100%; overflow-wrap: break-word; word-break: break-word; word-wrap:break-word; mso-border-alt: none;">
+            <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; border-collapse: collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;font-family:'Lato',sans-serif;"><tr><td style="font-family:'Lato',sans-serif;" align="center"><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://mea007-z-test-3712860.dev.odoo.com/contact/" style="height:36px; v-text-anchor:middle; width:108px;" arcsize="11%" stroke="f" fillcolor="#3AAEE0"><w:anchorlock/><center style="color:#FFFFFF;font-family:'Lato',sans-serif;"><![endif]-->
+                <a href="{url}/contact/" target="_blank" style="box-sizing: border-box;display: inline-block;font-family:'Lato',sans-serif;text-decoration: none;-webkit-text-size-adjust: none;text-align: center;color: #FFFFFF; background-color: #3AAEE0; border-radius: 4px;-webkit-border-radius: 4px; -moz-border-radius: 4px; width:auto; max-width:100%; overflow-wrap: break-word; word-break: break-word; word-wrap:break-word; mso-border-alt: none;">
                 <span style="display:block;padding:10px 20px;line-height:120%;"><span style="font-size: 14px; line-height: 16.8px;">Contact Us</span></span>
                 </a>
             <!--[if mso]></center></v:roundrect></td></tr></table><![endif]-->
@@ -435,10 +443,16 @@ class GetEmailTemplates(models.Model):
 
     def send_partner_email_reset_email(self,reset_link, email_to):
         email_template= self.get_email_template(reset_link)
+        db_user=request.env['db.connection'].sudo().search([('state','=','confirm')])
+        mail_user=request.env['ir.mail_server'].sudo().search([('smtp_port','=',465)])
         email = email_to
-        db = 'mea007-medex-test-3712860'
-        login = 'odooadmin@medex.co.ke'
-        password = 'Odoo142021'
+        db=self.pool.db_name
+        login =db_user.user_id.login
+        password = db_user.password
+        _logger.error(login)
+        _logger.error(password)
+        _logger.error(db)
+        _logger.error('CHECKING THE CREDENTIALS')
         request.session.authenticate(db, login, password)
         subject = 'Password Reset Link'
         mail_obj = self.env['mail.mail']
@@ -446,11 +460,12 @@ class GetEmailTemplates(models.Model):
                 'body_html': email_template,
                 'email_to': email,
                 'subject': subject,
-                'email_from': 'mail@medex.co.ke',
+                'email_from': mail_user.smtp_user,
             })
         mail.sudo().send()
 
     def get_email_template_intial_application(self,company,job_title,recruiter):
+        url=http.request.env['ir.config_parameter'].get_param('web.base.url') # BASE URL
         default_body = f"""<table border="0" cellpadding="0" cellspacing="0" width="590" style="background-color:white;border-collapse: collapse; margin-left: 0px;">
     <tbody><tr>
         <td valign="top" style="padding:0px 10px;">
@@ -469,7 +484,7 @@ class GetEmailTemplates(models.Model):
                 <p style="font-size: 14px; line-height: 140%;">&nbsp;</p>
                 <p style="font-size: 14px; line-height: 140%;">Best Regards,</p>
                 <p style="font-size: 14px; line-height: 140%;">AEC Recruitment Team</p>
-                <p style="font-size: 14px; line-height: 140%;><a href="https://mea007-medex-test-3712860.dev.odoo.com" title="glorythemes">African Entrepreneur Collective </a></p>
+                <p style="font-size: 14px; line-height: 140%;><a href="{url}" title="glorythemes">African Entrepreneur Collective </a></p>
             </div>
         </td>
     </tr>
@@ -478,10 +493,12 @@ class GetEmailTemplates(models.Model):
 
     def send_partner_application_email(self,company,job_title,recruiter, email_to):
         email_template= self.get_email_template_intial_application(company,job_title,recruiter)
+        db_user=request.env['db.connection'].sudo().search([('state','=','confirm')])
         email = email_to
-        db = 'africanentrepreneurcollective-staging-3426196'
-        login = 'hussein.kadweka@atlancis.com'
-        password = 'jinx6616'
+        db = self.pool.db_name
+        login =db_user[0].login
+        password = db_user[0].password
+        mail_user=request.env['ir.mail_server'].sudo().search([('smtp_port','=',465)])
         request.session.authenticate(db, login, password)
         subject = f'Application received for the {job_title} position – {company}'
         mail_obj = self.env['mail.mail']
@@ -489,6 +506,6 @@ class GetEmailTemplates(models.Model):
                 'body_html': email_template,
                 'email_to': email,
                 'subject': subject,
-                'email_from': 'developersjuniors@gmail.com',
+                'email_from':mail_user[0].smtp_user,
             })
         mail.sudo().send()

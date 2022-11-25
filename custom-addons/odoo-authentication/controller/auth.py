@@ -3,10 +3,15 @@ from odoo import http
 from odoo.http import request, Response
 from odoo.addons.auth_signup.models.res_users import SignupError
 from odoo.exceptions import UserError
-import json
 from ..validator import validator
 from ..jwt_http import jwt_http 
 from werkzeug.security import generate_password_hash, check_password_hash
+import json
+import os
+import math
+import random
+import smtplib
+import xmlrpc.client
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -34,8 +39,11 @@ class JwtController(http.Controller):
             return response
         return jwt_http.do_login(email, password)
     
-    @http.route('/api/forgot/password', type='json', auth='public', cors='*',  method=['POST'])
-    def reset_password_link(self, **kw):
+    @http.route('/api/password', type='json', auth='public', cors='*',  method=['POST'])
+    def forgot_my_password(self,**kw):
+        mail_user=request.env['ir.mail_server'].sudo().search([('smtp_port','=',465)])
+        digits="0123456789"
+        OTP=""
         data = json.loads(request.httprequest.data)
         email = data['email']
         if not email:
@@ -43,7 +51,6 @@ class JwtController(http.Controller):
                 'code':400, 
                 'message':'Email address cannot be empty'
             }
-            _logger.error(response)
             return response
         partner =  request.env['res.partner'].sudo().search([('email', '=',email)])
         if not partner:
@@ -51,58 +58,64 @@ class JwtController(http.Controller):
                 'code':400, 
                 'message':'Email address does not exist'
             }
-            _logger.error(response)
             return response
-        password = ''
-        token = validator.create_token(partner, password)
-        reset_link = f'http://localhost:4200/auth/reset-password/{token}'
-        reset_password = partner.send_partner_email_reset_email(reset_link, email)
-        response = {
-                'code':200, 
-                'message':'Password Reset link has been sent to the email',
+        if partner:
+            for i in range(4):
+                OTP+=digits[math.floor(random.random()*10)]
+            otpMessage = OTP + " Is your reset Password  Code"
+            subject='Password Reset Code'
+            partner.sudo().write({'otp':OTP})
+            s = smtplib.SMTP(mail_user.smtp_host, 587)
+            s.starttls()
+            s.login(mail_user.smtp_user, mail_user.smtp_pass)
+            s.sendmail('&&&&&&&&&&&',email,otpMessage,subject)
+        return {
+                'code':400, 
+                'status':'success',
+                'message':'A code was Sent to your Email'
             }
-        return response
-        
 
-    @http.route('/api/reset/password', type='json', auth='public', cors='*',  method=['POST'])
-    def forgot_password(self, **kw):
+    @http.route('/api/set/password', type='json', auth='public', cors='*',  method=['POST'])
+    def set_new_password(self,**kw):
+        mail_user=request.env['ir.mail_server'].sudo().search([('smtp_port','=',465)])
+        digits="0123456789"
+        OTP=""
         data = json.loads(request.httprequest.data)
-        email = data['email']
-        password = data['email']
-        if not email:
+        code = data['code']
+        password = generate_password_hash(data['password'], method='sha256')
+        data['password'] = password
+        if not code:
             response = {
                 'code':400, 
                 'message':'Email address cannot be empty'
             }
-            _logger.error(response)
-            return response
-        partner =  request.env['res.partner'].sudo().search([('email', '=',email)])
-        if not partner:
-            response = {
-                'code':400, 
-                'message':'Email address does not exist'
-            }
-            _logger.error(response)
             return response
         if not password:
             response = {
                 'code':400, 
                 'message':'Password cannot be empty'
             }
-            _logger.error(response)
             return response
-        password = generate_password_hash(data['password'], method='sha256')
-        data = {
-            "password": password
-        }
-        results = partner.write(data)
-        response = {
-            'code':200, 
-            'message':'Password changed successfully',
-            "results": results
-        }
-        return response
-
+        partner =  request.env['res.partner'].sudo().search([('otp', '=',code)])
+        if not partner:
+            response = {
+                'code':400, 
+                'message':'The Code is Invalid'
+            }
+            return response
+        if partner:
+            partner.sudo().write({'password':password})
+            s = smtplib.SMTP(mail_user.smtp_host, 587)
+            s.starttls()
+            s.login(mail_user.smtp_user, mail_user.smtp_pass)
+            s.sendmail('&&&&&&&&&&&',partner.email,'Your Password was successfully changed')
+            partner.sudo().write({'otp':''})
+        return {
+                'code':400, 
+                'status':'success',
+                'message':'Password Successfully changed'
+            }  
+    
     @http.route('/api/me', type='json', auth='public', cors="*", method=['POST'])
     def me(self, **kw):
         http_method, body, headers, token = jwt_http.parse_request()
