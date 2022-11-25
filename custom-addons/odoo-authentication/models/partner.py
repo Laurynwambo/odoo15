@@ -10,4 +10,4 @@ class PartnerExtension(models.Model):
         comodel_name='jwt_provider.access_token',
         inverse_name='partner_id',
     )
-    otp=fields.Char(string='Otp')
+    # otp=fields.Char(string='Otp')
