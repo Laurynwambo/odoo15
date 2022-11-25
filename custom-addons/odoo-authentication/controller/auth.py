@@ -1,17 +1,13 @@
 
 from odoo import http
-from odoo.http import request, Response
-from odoo.addons.auth_signup.models.res_users import SignupError
-from odoo.exceptions import UserError
+from odoo.http import request
 from ..validator import validator
 from ..jwt_http import jwt_http 
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 import json
-import os
 import math
 import random
 import smtplib
-import xmlrpc.client
 
 import logging
 _logger = logging.getLogger(__name__)
