@@ -2,11 +2,11 @@ FROM odoo:15.0
 USER root
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
 RUN apt-get update
-COPY . /mnt/custom-addons
+COPY . /mnt/odoo-custom-addons
+RUN pip3 install  cachetools
+RUN pip3 install PyJWT
+RUN pip3 install simplejson
 USER odoo
-
-
-
 
 
 # RUN pip3 uninstall jwt
