@@ -12,7 +12,7 @@
     """,
     'license':'LGPL-3',
     'data': [],
-    'depends': ['base','mail'],
+    'depends': ['base','mail','oo_mobile_connect'],
     # 'data': ['Views/template.xml'],
     'images': ['static/description/banner.jpg'],
     'application': True,

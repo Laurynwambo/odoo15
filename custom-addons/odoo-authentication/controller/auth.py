@@ -1,4 +1,3 @@
-
 from odoo import http
 from odoo.http import request
 from ..validator import validator
@@ -15,6 +14,116 @@ _logger = logging.getLogger(__name__)
 SENSITIVE_FIELDS = ['password', 'password_crypt', 'new_password', 'create_uid', 'write_uid']
 
 class JwtController(http.Controller):
+    def _prepare_final_email_values(self,partner):
+        mail_obj = request.env['mail.mail']
+        user_access=request.env['db.connection'].sudo().search([("state", "=", "confirm")])
+        subject = f"Password Changed Successfully"
+        email_to = partner.email
+        body_html = f"""
+            <html>
+            <body>
+            <div style="margin:0px;padding: 0px;">
+                <p style="padding: 0px; font-size: 13px;">
+                    Hello {partner.name} !!,
+                    <br/>
+                    Your password was successfuly changed.
+                    <br/> 
+                    We are happy to serve you the best.
+                    <br/>
+                    .
+                <br/>
+                </p>
+
+                <p>
+                Best Regards
+                    <br/>
+                {user_access.user_id[0].company_id[0].name}</p>
+            <br/>
+            </div>
+            </body>
+            </html>
+        """
+        mail = mail_obj.sudo().create({
+            'body_html': body_html,
+            'subject': subject,
+            'email_to': email_to
+        })
+        mail.send()
+        return mail
+    def _prepare_otp_email_values(self,partner):
+        mail_obj = request.env['mail.mail']
+        user_access=request.env['db.connection'].sudo().search([("state", "=", "confirm")])
+        subject = f"Forgot My Password"
+        email_to = partner.email
+        body_html = f"""
+            <html>
+            <body>
+            <div style="margin:0px;padding: 0px;">
+                <p style="padding: 0px; font-size: 13px;">
+                    Hello {partner.name} !!,
+                    <br/>
+                    Your request to reset password was successfuly.
+                    <br/>
+                    user {partner.otp} to reset your Password
+                    <br/> 
+                    if you did not request for this ignore this message.
+                    <br/>
+                    .
+                <br/>
+                </p>
+
+                <p>Best Regards
+                    <br/>
+                {user_access.user_id[0].company_id[0].name}</p>
+            <br/>
+            </div>
+            </body>
+            </html>
+        """
+        mail = mail_obj.sudo().create({
+            'body_html': body_html,
+            'subject': subject,
+            'email_to': email_to
+        })
+        mail.send()
+        return mail
+    def _prepare_registration_email_values(self,new_customer):
+        mail_obj = request.env['mail.mail']
+        user_access=request.env['db.connection'].sudo().search([("state", "=", "confirm")])
+        subject = f"SuccessFully Registration"
+        email_to = new_customer.email
+        body_html = f"""
+            <html>
+            <body>
+            <div style="margin:0px;padding: 0px;">
+                <p style="padding: 0px; font-size: 13px;">
+                    Hello {new_customer.name} !!,
+                    <br/>
+                    Your Account was successfuly Registered with us.
+                    <br/>
+                    We hope you will enjoy the best experience as
+                    <br/> 
+                    you track all your invoices and payments.
+                    <br/>
+                    .
+                <br/>
+                </p>
+
+                <p>Best Regards
+                    <br/>
+                {user_access.user_id[0].company_id[0].name}</p>
+            <br/>
+            </div>
+            </body>
+            </html>
+        """
+        mail = mail_obj.sudo().create({
+            'body_html': body_html,
+            'subject': subject,
+            'email_to': email_to
+        })
+        mail.send()
+        return mail
 
     @http.route('/api/login', type='json', auth='public', cors='*',  method=['POST'])
     def login(self, **kw):
@@ -34,6 +143,7 @@ class JwtController(http.Controller):
             }
             return response
         return jwt_http.do_login(email, password)
+        
     @http.route('/api/password', type='json', auth='public', cors='*',  method=['POST'])
     def forgot_my_password(self,**kw):
         mail_user=request.env['ir.mail_server'].sudo().search([('smtp_port','=',465)])
@@ -57,13 +167,8 @@ class JwtController(http.Controller):
         if partner:
             for i in range(4):
                 OTP+=digits[math.floor(random.random()*10)]
-            otpMessage = OTP + " Is your reset Password  Code"
-            subject='Password Reset Code'
             partner.sudo().write({'otp':OTP})
-            s = smtplib.SMTP(mail_user.smtp_host, 587)
-            s.starttls()
-            s.login(mail_user.smtp_user, mail_user.smtp_pass)
-            s.sendmail('&&&&&&&&&&&',email,otpMessage,subject)
+            self._prepare_otp_email_values(partner)
         return {
                 'code':200, 
                 'status':'success',
@@ -100,11 +205,8 @@ class JwtController(http.Controller):
             return response
         if partner:
             partner.sudo().write({'password':password})
-            s = smtplib.SMTP(mail_user.smtp_host, 587)
-            s.starttls()
-            s.login(mail_user.smtp_user, mail_user.smtp_pass)
-            s.sendmail('&&&&&&&&&&&',partner.email,'Your Password was successfully changed')
             partner.sudo().write({'otp':''})
+            self._prepare_final_email_values(partner)
         return {
                 'code':400, 
                 'status':'success',
@@ -216,31 +318,16 @@ class JwtController(http.Controller):
                 'code':422, 
                 'message':'Tax Id already existed'
             }
-        register_response = {}
-        try:           
-            register_response = self._signup_with_values(data)
-        except Exception as e:
+        new_customer = request.env['res.partner'].sudo().create(data)
+        if new_customer:
+            self._prepare_registration_email_values(new_customer)
             response = {
-                'code':500, 
-                'message':str(e)
-            }
-            _logger.error(response)
-            return response
-        return register_response
-
-    def _signup_with_values(self, data):
-        new_user = request.env['res.partner'].sudo().create(data)
-        new_user.send_email()
-        response = {
-            'code': 200,
-            'message': {
-                'name': new_user.name,
-                'number': new_user.vat,
-                'email': new_user.email,
-                'phone': new_user.phone
-            }
-        }
+                        'code': 200,
+                        'message': {
+                            'name': new_customer.name,
+                            'number': new_customer.vat,
+                            'email': new_customer.email,
+                            'phone': new_customer.phone
+                        }
+                    }
         return response
-
-    def signup_email(self, data):
-        user_sudo = request.env['res.partner'].sudo().search([('email', '=', data.get('email'))])
