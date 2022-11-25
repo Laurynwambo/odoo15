@@ -3,7 +3,7 @@ from odoo import models, fields, api,_
 
 class PartnerExtension(models.Model):
     _inherit = 'res.partner'
-
+    
     password = fields.Text(string="partner password")
     access_token_ids = fields.One2many(
         string='Access Tokens',
