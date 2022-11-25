@@ -1,12 +1,12 @@
-from odoo import http
-from odoo.http import request
+from werkzeug.security import generate_password_hash,check_password_hash
 from ..validator import validator
-from ..jwt_http import jwt_http 
-from werkzeug.security import generate_password_hash
+from odoo.http import request
+from odoo import http
+import datetime
+import random
 import json
 import math
-import random
-import smtplib
+import jwt
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -14,6 +14,8 @@ _logger = logging.getLogger(__name__)
 SENSITIVE_FIELDS = ['password', 'password_crypt', 'new_password', 'create_uid', 'write_uid']
 
 class JwtController(http.Controller):
+    def key(self):
+        return '8dxtZrbfRJQJd2NtPujww3OfwAUfKOXf'
     def _prepare_final_email_values(self,partner):
         mail_obj = request.env['mail.mail']
         user_access=request.env['db.connection'].sudo().search([("state", "=", "confirm")])
@@ -127,6 +129,7 @@ class JwtController(http.Controller):
 
     @http.route('/api/login', type='json', auth='public', cors='*',  method=['POST'])
     def login(self, **kw):
+        exp = datetime.datetime.utcnow() + datetime.timedelta(days=1)
         data = json.loads(request.httprequest.data)
         email = data['email']
         password = data['password']
@@ -142,8 +145,43 @@ class JwtController(http.Controller):
                 'message':'Password cannot be empty'
             }
             return response
-        return jwt_http.do_login(email, password)
-        
+        partner = request.env['res.partner'].sudo().search([('email','=',email)])
+        if partner:
+            user = check_password_hash(partner['password'], password)
+            if user:
+                payload = {
+                        'exp': exp,
+                        'iat': datetime.datetime.utcnow(),
+                        'sub': partner['id'],
+                        'lgn': partner['email'],
+                        'name': partner['name'],
+                        'vat': partner['vat'],
+                        'phone': partner['phone'],
+                    }
+                token = jwt.encode(payload,self.key(),algorithm='HS256')
+                request.env['jwt_provider.access_token'].sudo().create({'partner_id': partner.id,'expires': exp,'token': token})
+                return { 
+                    'phone': partner.phone,
+                    'user_name': partner.name, 
+                    'email': partner.email,
+                    'user_id': partner.id, 
+                    'token_type': 'Bearer', 
+                    'access_token': token, 
+                    'code':200 
+                    }
+
+            else:
+                return{
+                    'code':401,
+                    'status':'failed',
+                    'message':'Incorrect username or password'
+                }
+        else:
+            return{
+                'code':401,
+                'status':'failed',
+                'message':'Email address does not'
+            }
     @http.route('/api/password', type='json', auth='public', cors='*',  method=['POST'])
     def forgot_my_password(self,**kw):
         mail_user=request.env['ir.mail_server'].sudo().search([('smtp_port','=',465)])
@@ -213,32 +251,32 @@ class JwtController(http.Controller):
                 'message':'Password Successfully changed'
             }  
     
-    @http.route('/api/me', type='json', auth='public', cors="*", method=['POST'])
-    def me(self, **kw):
-        http_method, body, headers, token = jwt_http.parse_request()
-        _logger.error(token)
-        result = validator.verify_token(token)
-        _logger.error(result)
-        if not result['status']:
-            response = {
-                'code':result['code'], 
-                'message':result['message']
-            }
-            _logger.error(response)
-            return response
-        response = request.env["res.partner"].sudo().search([("id", "=", result['id'])])
-        partner_details = {
-            'email': response['email'],
-            'name': response['name'],
-            'phone': response['phone'],
-            'country': response['country_id']['name'],
-            'token': response['access_token_ids']['token']
-        }
-        resp = {
-            'code':200, 
-            'details':partner_details
-        }
-        return resp
+    # @http.route('/api/me', type='json', auth='public', cors="*", method=['POST'])
+    # def me(self, **kw):
+    #     http_method, body, headers, token = jwt_http.parse_request()
+    #     _logger.error(token)
+    #     result = validator.verify_token(token)
+    #     _logger.error(result)
+    #     if not result['status']:
+    #         response = {
+    #             'code':result['code'], 
+    #             'message':result['message']
+    #         }
+    #         _logger.error(response)
+    #         return response
+    #     response = request.env["res.partner"].sudo().search([("id", "=", result['id'])])
+    #     partner_details = {
+    #         'email': response['email'],
+    #         'name': response['name'],
+    #         'phone': response['phone'],
+    #         'country': response['country_id']['name'],
+    #         'token': response['access_token_ids']['token']
+    #     }
+    #     resp = {
+    #         'code':200, 
+    #         'details':partner_details
+    #     }
+    #     return resp
 
     @http.route('/api/logout', type='json', auth='public', cors='*', method=['POST'])
     def logout(self, **kw):
@@ -251,15 +289,13 @@ class JwtController(http.Controller):
                 'code':400, 
                 'message':'Logout Failed'
             }
-            _logger.error(response)
             return response
-
-        jwt_http.do_logout(token)
+        logout=request.env['jwt_provider.access_token'].sudo().search([('token', '=', token)])
+        logout.sudo().unlink()
         response = {
                 'code':200, 
                 'message':'Logout'
             }
-        _logger.error(response)
         return response
 
     @http.route('/api/register', type='json', auth='public', cors='*',  method=['POST'])
