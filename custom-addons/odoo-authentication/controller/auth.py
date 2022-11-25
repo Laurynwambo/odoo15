@@ -69,7 +69,7 @@ class JwtController(http.Controller):
             s.login(mail_user.smtp_user, mail_user.smtp_pass)
             s.sendmail('&&&&&&&&&&&',email,otpMessage,subject)
         return {
-                'code':400, 
+                'code':200, 
                 'status':'success',
                 'message':'A code was Sent to your Email'
             }
