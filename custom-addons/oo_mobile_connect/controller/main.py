@@ -47,7 +47,7 @@ class MobileConnect(http.Controller):
             'paid': round(paid,3),
             'items':len(invoice),
             'not_paid': round(not_paid,3),
-            'percentage':round(not_paid/(not_paid+paid)*100,2),
+            'percentage':round(not_paid/(not_paid+paid)*100,2) if not_paid>0 else 0.00,
             "message": "Invoices for the Provided Email"
         }
     
