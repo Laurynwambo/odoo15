@@ -38,7 +38,6 @@ class JwtController(http.Controller):
             }
             return response
         return jwt_http.do_login(email, password)
-    
     @http.route('/api/password', type='json', auth='public', cors='*',  method=['POST'])
     def forgot_my_password(self,**kw):
         mail_user=request.env['ir.mail_server'].sudo().search([('smtp_port','=',465)])
