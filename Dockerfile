@@ -3,9 +3,9 @@ USER root
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
 RUN apt-get update
 COPY . /mnt/odoo-custom-addons
-RUN pip3 install  cachetools
-RUN pip3 install PyJWT
-RUN pip3 install simplejson
+# RUN pip3 install  cachetools
+# RUN pip3 install PyJWT
+# RUN pip3 install simplejson
 USER odoo
 
 
