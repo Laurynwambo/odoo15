@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <record id="order_view_available_quantity" model="ir.ui.view">
+        <field name="name">sale.order.line.view.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="/form/sheet/notebook/page/field[@name='order_line']/tree/field[@name='customer_lead']" 
+                position="replace">
+                <field name="qty_available" />
+            </xpath>
+             <xpath expr="/form/sheet/notebook/page/field[@name='order_line']/tree/field[@name='product_id']" 
+                position="replace">
+                <field name="product_id" options="{'no_create': True, 'no_edit': True}"/>
+
+            </xpath>
+        </field>
+    </record>
+</odoo>

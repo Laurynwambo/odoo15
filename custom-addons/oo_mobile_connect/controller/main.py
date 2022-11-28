@@ -21,7 +21,7 @@ class MobileConnect(http.Controller):
             }
             return response
         invoice = request.env['account.move'].sudo().search([
-            ("payment_reference", "ilike", "INV"),
+            ("payment_state", "in", ["not_paid", "partial"]),
             ('state', '=', 'posted'),
             ('partner_id.email', '=', data['email'])
         ])
