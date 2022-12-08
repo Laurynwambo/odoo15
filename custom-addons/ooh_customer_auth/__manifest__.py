@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "Clients Endpoint Authenticate",
+    'name': "Ooh Custom Auth",
     'version': "15.1.1",
     'author': "@The-Kadweka",
     'category': "Tools",
     'support': "@The-Kadweka",
     'website': "husseinkadweka.info",
-    'summary': "All Employee Customizations",
+    'summary': "Customer Authentication ",
     'description': """
        Endpoints for users to login to odoo system with limited data from external website
     """,
     'license':'LGPL-3',
+    'depends': ['base','mail','contacts'],
     'data': [],
-    'depends': ['base','mail','oo_mobile_connect'],
-    # 'data': ['Views/template.xml'],
     'images': ['static/description/banner.jpg'],
     'application': True,
 }

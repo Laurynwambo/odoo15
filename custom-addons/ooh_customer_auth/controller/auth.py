@@ -11,6 +11,7 @@ import jwt
 import logging
 
 _logger = logging.getLogger(__name__)
+today = datetime.date.today()
 
 SENSITIVE_FIELDS = ['password', 'password_crypt', 'new_password', 'create_uid', 'write_uid']
 
@@ -21,7 +22,6 @@ class JwtController(http.Controller):
 
     def _prepare_final_email_values(self, partner):
         mail_user = request.env['ir.mail_server'].sudo().search([('smtp_port', '=', 465)])
-        user_access = request.env['db.connection'].sudo().search([("state", "=", "confirm")])
         subject = f"Password Changed Successfully"
         mail_obj = request.env['mail.mail']
         email_from = mail_user.smtp_user
@@ -44,7 +44,7 @@ class JwtController(http.Controller):
                 <p>
                 Best Regards
                     <br/>
-                {user_access.user_id[0].company_id[0].name}</p>
+                The Team</p>
             <br/>
             </div>
             </body>
@@ -61,7 +61,6 @@ class JwtController(http.Controller):
 
     def _prepare_otp_email_values(self, partner):
         mail_user = request.env['ir.mail_server'].sudo().search([('smtp_port', '=', 465)])
-        user_access = request.env['db.connection'].sudo().search([("state", "=", "confirm")])
         mail_obj = request.env['mail.mail']
         email_from = mail_user.smtp_user
         subject = f"Forgot My Password"
@@ -75,7 +74,9 @@ class JwtController(http.Controller):
                     <br/>
                     Your request to reset password was successfuly.
                     <br/>
-                    user {partner.otp} to reset your Password
+                    use {partner.otp} to reset your Password.
+                    <br/>
+                    Otp is Valid for <strong>1 minute</strong>
                     <br/> 
                     if you did not request for this ignore this message.
                     <br/>
@@ -85,7 +86,7 @@ class JwtController(http.Controller):
 
                 <p>Best Regards
                     <br/>
-                {user_access.user_id[0].company_id[0].name}</p>
+                The Team</p>
             <br/>
             </div>
             </body>
@@ -100,19 +101,18 @@ class JwtController(http.Controller):
         mail.send()
         return mail
 
-    def _prepare_registration_email_values(self, new_customer):
+    def _prepare_registration_email_values(self, partner):
         mail_user = request.env['ir.mail_server'].sudo().search([('smtp_port', '=', 465)])
-        user_access = request.env['db.connection'].sudo().search([("state", "=", "confirm")])
         mail_obj = request.env['mail.mail']
         email_from = mail_user.smtp_user
         subject = f"SuccessFully Registration"
-        email_to = new_customer.email
+        email_to = partner.email
         body_html = f"""
             <html>
             <body>
             <div style="margin:0px;padding: 0px;">
                 <p style="padding: 0px; font-size: 13px;">
-                    Hello {new_customer.name} !!,
+                    Hello {partner.name} !!,
                     <br/>
                     Your Account was successfuly Registered with us.
                     <br/>
@@ -126,7 +126,7 @@ class JwtController(http.Controller):
 
                 <p>Best Regards
                     <br/>
-                {user_access.user_id[0].company_id[0].name}</p>
+                The Team</p>
             <br/>
             </div>
             </body>
@@ -141,10 +141,11 @@ class JwtController(http.Controller):
         mail.send()
         return mail
 
-    @http.route('/api/login', type='json', auth='public', cors='*', method=['POST'])
+    @http.route('/v1/customer/login', type='json', auth='public', cors='*', method=['POST'])
     def login(self, **kw):
         exp = datetime.datetime.utcnow() + datetime.timedelta(days=1)
         data = json.loads(request.httprequest.data)
+        _logger.error(data)
         email = data['email']
         password = data['password']
         if not email:
@@ -161,6 +162,8 @@ class JwtController(http.Controller):
             return response
         partner = request.env['res.partner'].sudo().search([('email', '=', email)])
         if partner:
+            _logger.error(partner['password'])
+            _logger.error('THE PASSWORD WE NEED')
             user = check_password_hash(partner['password'], password)
             if user:
                 payload = {
@@ -169,7 +172,6 @@ class JwtController(http.Controller):
                     'sub': partner['id'],
                     'lgn': partner['email'],
                     'name': partner['name'],
-                    'vat': partner['vat'],
                     'phone': partner['phone'],
                 }
                 token = jwt.encode(payload, self.key(), algorithm='HS256')
@@ -189,16 +191,16 @@ class JwtController(http.Controller):
                 return {
                     'code': 401,
                     'status': 'failed',
-                    'message': 'Incorrect username or password'
+                    'message': 'Your Password is Incorrect'
                 }
         else:
             return {
                 'code': 401,
                 'status': 'failed',
-                'message': 'Email address does not'
+                'message': 'Email address does not Exist'
             }
 
-    @http.route('/api/password', type='json', auth='public', cors='*', method=['POST'])
+    @http.route('/v1/customer/password', type='json', auth='public', cors='*', method=['POST'])
     def forgot_my_password(self, **kw):
         digits = "0123456789"
         OTP = ""
@@ -220,7 +222,7 @@ class JwtController(http.Controller):
         if partner:
             for i in range(4):
                 OTP += digits[math.floor(random.random() * 10)]
-            partner.sudo().write({'otp': OTP})
+            partner.sudo().write({'otp': OTP,'when_sent':today})
             self._prepare_otp_email_values(partner)
         return {
             'code': 200,
@@ -228,11 +230,8 @@ class JwtController(http.Controller):
             'message': 'A code was Sent to your Email'
         }
 
-    @http.route('/api/set/password', type='json', auth='public', cors='*', method=['POST'])
+    @http.route('/v1/customer/set/password', type='json', auth='public', cors='*', method=['POST'])
     def set_new_password(self, **kw):
-        mail_user = request.env['ir.mail_server'].sudo().search([('smtp_port', '=', 465)])
-        digits = "0123456789"
-        OTP = ""
         data = json.loads(request.httprequest.data)
         code = data['code']
         password = generate_password_hash(data['password'], method='sha256')
@@ -257,44 +256,25 @@ class JwtController(http.Controller):
             }
             return response
         if partner:
-            partner.sudo().write({'password': password})
-            partner.sudo().write({'otp': ''})
-            self._prepare_final_email_values(partner)
-        return {
-            'code': 400,
-            'status': 'success',
-            'message': 'Password Successfully changed'
-        }
+            diff=((today-partner.when_sent).total_seconds())/60
+            if diff <1:
+                partner.sudo().write({'password': password})
+                partner.sudo().write({'otp': ''})
+                self._prepare_final_email_values(partner)
+                return {
+                    'code': 400,
+                    'status': 'success',
+                    'message': 'Password Successfully changed'
+                }
+            else:
+                return {
+                    'code':402,
+                    'status': 'success',
+                    'message': 'The Code has expired'
+                }
 
-        # @http.route('/api/me', type='json', auth='public', cors="*", method=['POST'])
 
-    # def me(self, **kw):
-    #     http_method, body, headers, token = jwt_http.parse_request()
-    #     _logger.error(token)
-    #     result = validator.verify_token(token)
-    #     _logger.error(result)
-    #     if not result['status']:
-    #         response = {
-    #             'code':result['code'], 
-    #             'message':result['message']
-    #         }
-    #         _logger.error(response)
-    #         return response
-    #     response = request.env["res.partner"].sudo().search([("id", "=", result['id'])])
-    #     partner_details = {
-    #         'email': response['email'],
-    #         'name': response['name'],
-    #         'phone': response['phone'],
-    #         'country': response['country_id']['name'],
-    #         'token': response['access_token_ids']['token']
-    #     }
-    #     resp = {
-    #         'code':200, 
-    #         'details':partner_details
-    #     }
-    #     return resp
-
-    @http.route('/api/logout', type='json', auth='public', cors='*', method=['POST'])
+    @http.route('/v1/customer/logout', type='json', auth='public', cors='*', method=['POST'])
     def logout(self, **kw):
         data = json.loads(request.httprequest.data)
         token = data['token']
@@ -314,25 +294,18 @@ class JwtController(http.Controller):
         }
         return response
 
-    @http.route('/api/register', type='json', auth='public', cors='*', method=['POST'])
+    @http.route('/v1/customer/register', type='json', auth='public', cors='*', method=['POST'])
     def register(self, **kw):
         data = json.loads(request.httprequest.data)
         email = data['email']
         password = generate_password_hash(data['password'], method='sha256')
         data['password'] = password
         name = data['name']
-        vat = data['vat']
         phone = data['phone']
         if not email:
             response = {
                 'code': 422,
                 'message': 'Email address cannot be empty'
-            }
-            return response
-        if not vat:
-            response = {
-                'code': 422,
-                'message': 'Tax Id cannot be empty'
             }
             return response
         if not name:
@@ -365,21 +338,20 @@ class JwtController(http.Controller):
                 'code': 422,
                 'message': 'Phone Number already existed'
             }
-        if request.env["res.partner"].sudo().search([("vat", "=", vat)]):
-            response = {
-                'code': 422,
-                'message': 'Tax Id already existed'
-            }
-        new_customer = request.env['res.partner'].sudo().create(data)
-        if new_customer:
-            self._prepare_registration_email_values(new_customer)
+        partner = request.env['res.partner'].sudo().create({
+            'email':email,
+            'phone':phone,
+            'name':name,
+            'password':password
+        })
+        if partner:
+            self._prepare_registration_email_values(partner)
             response = {
                 'code': 200,
                 'message': {
-                    'name': new_customer.name,
-                    'number': new_customer.vat,
-                    'email': new_customer.email,
-                    'phone': new_customer.phone
+                    'name': partner.name,
+                    'email': partner.email,
+                    'phone': partner.phone
                 }
             }
         return response
