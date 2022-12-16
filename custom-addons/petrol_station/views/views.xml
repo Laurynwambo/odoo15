@@ -1,0 +1,82 @@
+<odoo>
+  <data>
+
+    <!-- <menuitem
+    id="petrol_station_root"
+    name="Petrol Station"
+    
+    
+    sequence="1"/>
+
+    <menuitem
+    id="menu_hr_employee_payroll"
+    name="Employees Management"
+    parent="petrol_station_root"
+ 
+    sequence="4"/>
+
+    <menuitem
+        id="menu_hr_employee_user"
+        name="Employees"
+        action="hr.open_view_employee_list_my"
+        parent="menu_hr_employee_payroll"
+        sequence="1"/>
+
+    <menuitem
+        id="stock_management"
+        name="Stock Management"
+        parent="petrol_station_root"
+        sequence="1"/>
+
+    <menuitem
+        id="inventory_management"
+        name="Company's Assets"
+        action="sale.product_template_action"
+        parent="stock_management"
+        sequence="5"/>
+
+    <menuitem
+        id="configuration_management"
+        name="Vehicle Management"
+        parent="petrol_station_root"
+        sequence="2"/>
+
+    <menuitem
+        id="quotation_management"
+        name="Quotation"
+        action="purchase.purchase_rfq"
+        parent="stock_management"
+        sequence="4"/>
+
+     <menuitem
+        id="attendance_management"
+        name="Check In/Out"
+        action="hr_attendance.hr_attendance_action_my_attendances"
+        parent="menu_hr_employee_payroll"
+        sequence="3"/>
+
+    <menuitem
+        id="list_of_attendance_management"
+        name="Attendance"
+        action="hr_attendance.hr_attendance_action"
+        parent="menu_hr_employee_payroll"
+        sequence="4"/>
+
+     <menuitem
+        id="department_management"
+        name="Department"
+        action="hr.hr_department_kanban_action"
+        parent="menu_hr_employee_payroll"
+        sequence="5"/> -->
+
+    
+    <menuitem id="menu_stock_inventory_control" 
+    action="sale.product_template_action" name="Sales" parent="stock.menu_stock_inventory_control" sequence="99"/>
+
+    <menuitem id="test_stock_inventory_control" name="Fuel stock" parent="stock.menu_stock_root" sequence="200"/>
+
+
+
+    
+  </data>
+</odoo>

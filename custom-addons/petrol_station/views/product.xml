@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record model="ir.ui.view" id="product_inherit_view">
+        <field name="name">product.product.form.inherit.budget</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="priority" eval="50"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='available_in_pos']" position="after">
+                <field name="on_app"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

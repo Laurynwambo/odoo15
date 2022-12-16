@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+   <record id="view_vehicle_details_activity" model="ir.ui.view">
+      <field name="name">activity</field>
+      <field name="model">vehicle.details</field>
+      <field name="arch" type="xml">
+         <activity string="Services">
+            <field name="ref"/>
+            <templates>
+                <div t-name="activity-box">
+                  <img t-att-src="activity_image('vehicle.details', 'image', record.ref.raw_value)" t-att-title="record.ref.value" t-att-alt="record.ref.value"/>
+                    <div>
+                        <field name="ref" display="full"/>
+                    </div>
+                </div>
+            </templates>
+        </activity>
+         
+      </field>
+ </record>
+
+
+   <record id="view_vehicle_details_tree" model="ir.ui.view">
+      <field name="name">Vehicle Details</field>
+      <field name="model">vehicle.details</field>
+      <field name="arch" type="xml">
+         <tree>
+            <field name="ref"/> 
+            <field name="v_number"/> 
+            <field name="make"/> 
+            <field name="model"/>
+            <field name="activity_ids" widget="list_activity"/> 
+            <field name="services" widget="many2many_tags" options="{'color_field': 'color'}"/>
+         </tree>
+         
+      </field>
+ </record>
+     <record id="view_vehicle_details_form" model="ir.ui.view">
+      <field name="name">Vehicle Details</field>
+      <field name="model">vehicle.details</field>
+      <field name="arch" type="xml">
+
+         <form>
+            
+            <sheet>
+               <div class="pull_left">
+                  <h2>
+                     <field name="image" widget="image" class="oe_avatar"/>
+                  </h2>
+               </div>
+               <group>
+                  <group>
+                    <field name="v_number"/>  
+                    <field name="owner"/> 
+                    <field name="o_address" />
+                    <field name="mobile"/>
+                    <field name="services" widget="many2many_tags" options="{'color_field': 'color'}"/> 
+                  </group>
+                   
+                  <group>
+                    <field name="vat_no"/>
+                    <field name="make"/>
+                    <field name="model"/>
+                    <field name="year"/>  
+                    <field name="active"/> 
+                    <field name="ref"/>
+                  </group>
+               </group>
+               
+            </sheet>
+            <!-- Chatter -->
+            <div class="oe_chatter">
+               <field name="message_follower_ids" groups="base.group_user"/>
+               <field name="activity_ids"/>
+               <field name="message_ids"/>
+           </div>
+         </form>
+      </field>
+
+
+     </record>
+  
+   <record id="view_vehicle_details_search" model="ir.ui.view">
+      <field name="name">Search</field>
+      <field name="model">vehicle.details</field>
+      <field name="arch" type="xml">
+         <search>
+           
+            <filter name="filter_archived" string="Archived" domain="[('active', '=' , False)]"/>
+            
+            
+         </search>
+         
+      </field>
+ </record>
+
+      <record id="action_vehicle_details" model="ir.actions.act_window">
+         <field name="name">Vehicle Details</field>
+         <field name="type">ir.actions.act_window</field>
+         <field name="res_model">vehicle.details</field>
+         <field name="view_mode">tree,form,activity</field>
+         <field name="context">{}</field>
+         <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+            Create your first record
+            </p>
+         </field>
+      </record>
+
+      <!-- <menuitem
+      id="vehicles_management"
+      name="Vehicles"
+      action="action_vehicle_details"
+      parent="configuration_management"
+      sequence="1"/> -->
+   
+</odoo>

@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_fuels_stock,fuels.stock,model_fuels_stock,base.group_user,1,1,1,1
+access_vehicle_details_user,vehicle.details,model_vehicle_details,base.group_user,1,1,1,1
+access_service_available_user,service.available.manager,model_service_available,base.group_user,1,1,1,1

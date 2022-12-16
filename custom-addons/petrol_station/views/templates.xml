@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="tmp_sales_data" name="Sale Details">
+        <t t-call="web.layout">
+            <div class="oe_structure">
+                <div class="container"><br />
+                    <center>
+                        <h3>Sale Order Details</h3>
+                    </center><br />
+                    <table class="table-striped table">
+                        <thead style="font-size: 23px;">
+                            <tr>
+                                <h6><b>
+                                        <th>Sale Order</th>
+                                        <th>Customer</th>
+                                        <th>Date</th>
+                                        <th><b>State</b></th>
+                                    </b></h6>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="records" t-as="stock.fuel">
+                                <tr>
+                                    <td><span t-esc="stock.fuel.type" /></td>
+                                    <td><span t-esc="stock.fuel.vendor" /></td>
+                                    <td><span t-esc="stock.fuel.purchase_price" /></td>
+                                    <td><span t-esc="stock.fuel.state" /></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

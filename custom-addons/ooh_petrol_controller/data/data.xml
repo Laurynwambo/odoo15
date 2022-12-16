@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="sales_customer" model="res.partner">
+            <field name="name">Direct Sales Customer</field>
+        </record>
+        <record id="sales_journal" model="account.journal">
+            <field name="name">Direct Sales Customer</field>
+            <field name="type">sale</field>
+            <field name="code">DRSC</field>
+        </record>
+    </data>
+</odoo>
